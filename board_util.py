@@ -187,10 +187,9 @@ class GoBoardUtil(object):
         return board2d
 
     @staticmethod
-    def simulate(board, color, alpha, beta, depth):
+    def simulate(board, color, alpha, beta):
 
         endgame_query_result = board.evaluate_endgame()
-
         if (endgame_query_result != EMPTY):
             value = 1 if endgame_query_result == color else -1
             return value
@@ -198,7 +197,7 @@ class GoBoardUtil(object):
         opponent = GoBoardUtil.opponent(color)
         for move in legal_moves:
             board.play_move(move, color)
-            value = -GoBoardUtil.simulate(board, opponent, -beta, -alpha, depth+1) 
+            value = -GoBoardUtil.simulate(board, opponent, -beta, -alpha) 
             if ( value > alpha and value > 0):
                 alpha = value
             board.undoLastMove()
