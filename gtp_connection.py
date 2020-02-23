@@ -371,20 +371,32 @@ class GtpConnection():
             signal.alarm(self.timelimit)
             board_copy = self.board.copy()
             curr_player = board_copy.current_player
-            result = GoBoardUtil.simulate(board_copy, curr_player, -INFINITY, INFINITY)
-            winner = result[0]
-            move = result[1]
-            if ( move == EMPTY):
+            legal_moves = GoBoardUtil.generate_legal_moves(board_copy, curr_player)
+            alpha = -INFINITY
+            beta = INFINITY
+            best_move = EMPTY
+            for move in legal_moves:
+                board_copy.play_move(move, curr_player)
+                value = -GoBoardUtil.simulate(board_copy, GoBoardUtil.opponent(curr_player), alpha, beta)
+                board_copy.undoLastMove()
+
+                if (value > alpha and value > 0):
+                    m = point_to_coord(move, board_copy.size)
+                    mv = format_point(m)
+                    best_move = mv.lower()
+                    alpha = value
+                    break
+                    
+            if ( alpha < 0):
                 player = GoBoardUtil.opponent(curr_player)
                 player_to_str = "b" if player == BLACK else "w"
                 return [player_to_str]
             else:
                 player = "b" if curr_player == BLACK else "w"
-                move_coord = point_to_coord(move, self.board.size)
-                move_as_string = format_point(move_coord)
-                return [player , move_as_string]
+                return [player , best_move]
 
         except BaseException:
+            traceback.print_exc()
             duration = time.time() - start
             print('Duration: %.2f' % duration)
             return ["unknown"]

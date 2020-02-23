@@ -281,6 +281,7 @@ class SimpleGoBoard(object):
         decoded_move = self.decode_move(move)
         point = int(decoded_move[0])
         self.board[point] = EMPTY
+        self.current_player = GoBoardUtil.opponent(self.current_player)
 
 
     def neighbors_of_color(self, point, color):

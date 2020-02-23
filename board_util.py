@@ -6,6 +6,7 @@ Utility functions for Go board.
 import numpy as np
 import signal
 import time
+# from gtp_connection import move_to_coord, format_point
 
 """
 Encoding of colors on and off a Go board.
@@ -96,6 +97,32 @@ def coord_to_point(row, col, boardsize):
     NS = boardsize + 1
     return NS * row + col
 
+def point_to_coord(point, boardsize):
+    """
+    Transform point given as board array index 
+    to (row, col) coordinate representation.
+    Special case: PASS is not transformed
+    """
+    if point == PASS:
+        return PASS
+    else:
+        NS = boardsize + 1
+        return divmod(point, NS)
+
+def format_point(move):
+    """
+    Return move coordinates as a string such as 'a1', or 'pass'.
+    """
+    column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    #column_letters = "abcdefghjklmnopqrstuvwxyz"
+    if move == PASS:
+        return "pass"
+    row, col = move
+    if not 0 <= row < MAXSIZE or not 0 <= col < MAXSIZE:
+        raise ValueError
+    return column_letters[col - 1]+ str(row)
+    
+
 class GoBoardUtil(object):
     
     @staticmethod
@@ -160,25 +187,21 @@ class GoBoardUtil(object):
         return board2d
 
     @staticmethod
-    def simulate(board, initial_color, alpha, beta):
-        endgame_query_result = board.evaluate_endgame()
-        if (endgame_query_result != EMPTY):
-            best_move = EMPTY
-            value = 1 if endgame_query_result == initial_color else -1
-            if (value > 0 and len(board.played_moves) != 0):
-                encoded_move = board.played_moves[-1]
-                decoded_move = board.decode_move(encoded_move)
-                best_move = int(decoded_move[0])
-            return [value, best_move]
+    def simulate(board, color, alpha, beta, depth):
 
-        color = board.current_player
+        endgame_query_result = board.evaluate_endgame()
+
+        if (endgame_query_result != EMPTY):
+            value = 1 if endgame_query_result == color else -1
+            return value
         legal_moves = GoBoardUtil.generate_legal_moves(board, color)
+        opponent = GoBoardUtil.opponent(color)
         for move in legal_moves:
             board.play_move(move, color)
-            result = GoBoardUtil.simulate(board, initial_color, -beta, -alpha)
-            value = -result[0]
-            best_move = result[1]
+            value = -GoBoardUtil.simulate(board, opponent, -beta, -alpha, depth+1) 
+            if ( value > alpha and value > 0):
+                alpha = value
             board.undoLastMove()
             if ( value >= beta ):
-                return [beta, best_move]
-        return [alpha, best_move]
+                return beta
+        return alpha
