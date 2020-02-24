@@ -6,6 +6,7 @@ Utility functions for Go board.
 import numpy as np
 import signal
 import time
+import random
 # from gtp_connection import move_to_coord, format_point
 
 """
@@ -121,8 +122,48 @@ def format_point(move):
     if not 0 <= row < MAXSIZE or not 0 <= col < MAXSIZE:
         raise ValueError
     return column_letters[col - 1]+ str(row)
-    
 
+class TranspositionTable(object):
+# Table is stored in a dictionary, with board code as key, 
+# and minimax score as the value
+#taken from cmput 455 sample code by Martin Mueller
+
+    # Empty dictionary
+    def __init__(self, size):
+        self.table = {}
+        self.zobrist = [[[random.randint(1,2**32 - 1) for i in range(2)]for j in range(size)]for k in range(size)]
+
+    # Used to print the whole table with print(tt)
+    def __repr__(self):
+        return self.table.__repr__()
+        
+    def store(self, code, score):
+        self.table[code] = score
+        return score
+    
+    # Python dictionary returns 'None' if key not found by get()
+    def lookup(self, code):
+        return self.table.get(code)
+    
+    def index(self, player):
+        ''' maps players to a number '''
+        if player == BLACK:
+            return 0
+        elif player == WHITE:
+            return 1
+        else:
+            return -1
+
+    def getCode(self, board):
+        hash = 0
+        twoD_board = GoBoardUtil.get_twoD_board(board)
+        for i in range (board.size):
+            for j in range(board.size):
+                if twoD_board[i][j] != 0:
+                    player = self.index(twoD_board[i][j])
+                    hash ^= self.zobrist[i][j][player]
+        return hash
+            
 class GoBoardUtil(object):
     
     @staticmethod
@@ -189,15 +230,22 @@ class GoBoardUtil(object):
     @staticmethod
     def simulate(board, color, alpha, beta):
 
+        code = board.tt.getCode(board)
+        tt_lookup = board.tt.lookup(code)
+        if tt_lookup:
+            # print(tt_lookup)
+            return tt_lookup
         endgame_query_result = board.evaluate_endgame()
         if (endgame_query_result != EMPTY):
+            code = board.tt.getCode(board)
             value = 1 if endgame_query_result == color else -1
-            return value
+            return board.tt.store(code, value)
         legal_moves = GoBoardUtil.generate_legal_moves(board, color)
         opponent = GoBoardUtil.opponent(color)
         for move in legal_moves:
             board.play_move(move, color)
-            value = -GoBoardUtil.simulate(board, opponent, -beta, -alpha) 
+            value = -GoBoardUtil.simulate(board, opponent, -beta, -alpha)
+            board.tt.store(code, value)
             if ( value > alpha and value > 0):
                 alpha = value
             board.undoLastMove()

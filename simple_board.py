@@ -11,7 +11,7 @@ The board uses a 1-dimensional representation with padding
 
 import numpy as np
 from collections import deque
-from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
+from board_util import GoBoardUtil, TranspositionTable, BLACK, WHITE, EMPTY, BORDER, \
                        PASS, is_black_white, coord_to_point, where1d, \
                        MAXSIZE, NULLPOINT
 
@@ -77,6 +77,8 @@ class SimpleGoBoard(object):
         self._initialize_empty_points(self.board)
         self._initialize_neighbors()
         self.played_moves = deque()
+        self.tt = TranspositionTable(size)
+
 
     def copy(self):
         b = SimpleGoBoard(self.size)

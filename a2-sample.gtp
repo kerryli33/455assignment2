@@ -23,11 +23,6 @@ clear_board
 #? [unknown]
 # too hard to solve
 
-timelimit 100
-
-50 solve
-#? [unknown]
-# Still too hard to solve
 
 boardsize 2
 clear_board

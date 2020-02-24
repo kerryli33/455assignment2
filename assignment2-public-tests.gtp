@@ -31,7 +31,7 @@ play b d1
 play w d2
 play b d3
 30 solve
-#?[w b1|w b2|w c1]
+#?[w b1|w b2]
 
 boardsize 4
 clear_board

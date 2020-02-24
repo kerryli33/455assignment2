@@ -266,7 +266,7 @@ class GtpConnection():
             move = coord_to_point(coord[0],coord[1], self.board.size)
             move_as_string = format_point(coord)
             self.board.play_move(move, color)
-            self.respond("{}\n".format(move_as_string))
+            self.respond("{}\n".format(move_as_string.lower()))
         
         else:            
             board_color = args[0].lower()
@@ -378,14 +378,20 @@ class GtpConnection():
             for move in legal_moves:
                 board_copy.play_move(move, curr_player)
                 value = -GoBoardUtil.simulate(board_copy, GoBoardUtil.opponent(curr_player), alpha, beta)
+                code = self.board.tt.getCode(board_copy)
+                if (value >= alpha and value > 0):
+                        self.board.tt.store(code, 1)
+                        board_copy.tt.store(code, 1)
+                        m = point_to_coord(move, board_copy.size)
+                        mv = format_point(m)
+                        best_move = mv.lower()
+                        alpha = value
+                else:
+                    # self.board.tt.store(code, -1)
+                    board_copy.tt.store(code, -1)
                 board_copy.undoLastMove()
 
-                if (value > alpha and value > 0):
-                    m = point_to_coord(move, board_copy.size)
-                    mv = format_point(m)
-                    best_move = mv.lower()
-                    alpha = value
-                    break
+                    
                     
             if ( alpha < 0):
                 player = GoBoardUtil.opponent(curr_player)
@@ -396,11 +402,13 @@ class GtpConnection():
                 return [player , best_move]
 
         except BaseException:
-            traceback.print_exc()
+            traceback.print_exc()  #TODO: remember to take these out
             duration = time.time() - start
             print('Duration: %.2f' % duration)
             return ["unknown"]
         finally:
+            duration = time.time() - start
+            print('Duration: %.2f' % duration)
             signal.signal(signal.SIGALRM, old_handler)
             signal.alarm(0)
 
